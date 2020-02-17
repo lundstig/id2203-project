@@ -27,6 +27,7 @@ import se.kth.id2203.networking._;
 import se.kth.id2203.overlay.Routing;
 import se.sics.kompics.sl._;
 import se.sics.kompics.network.Network;
+import scala.collection.mutable;
 
 class KVService extends ComponentDefinition {
 
@@ -35,10 +36,13 @@ class KVService extends ComponentDefinition {
   val route = requires(Routing);
   //******* Fields ******
   val self = cfg.getValue[NetAddress]("id2203.project.address");
+  val keyValue = new mutable.HashMap[String,String];
   //******* Handlers ******
   net uponEvent {
     case NetMessage(header, op: Op) => {
       log.info("Got operation {}! Now implement me please :)", op);
+      //HANDLE METHODS GET/PUT
+      
       trigger(NetMessage(self, header.src, op.response(OpCode.NotImplemented)) -> net);
     }
   }

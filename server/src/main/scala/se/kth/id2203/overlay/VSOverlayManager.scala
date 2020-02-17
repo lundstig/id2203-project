@@ -49,6 +49,8 @@ class VSOverlayManager extends ComponentDefinition {
   val timer = requires[Timer];
   //******* Fields ******
   val self = cfg.getValue[NetAddress]("id2203.project.address");
+  val repDegree = cfg.getValue[Int]("id2203.project.replicationDegree");
+
   private var lut: Option[LookupTable] = None;
   //******* Handlers ******
   boot uponEvent {
