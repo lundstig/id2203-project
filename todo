@@ -1,0 +1,10 @@
+# Todo
+* Basic non-consensus key-value store
+* Decide how to handle routing and communication
+* Figure out how to do the tests
+* Implement some version of sequence paxos
+  - KV-store receives Decide-events from consensus module
+
+
+# Done
+* Assign replication groups (Karl)
