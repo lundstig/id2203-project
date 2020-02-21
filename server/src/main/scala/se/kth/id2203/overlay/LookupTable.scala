@@ -28,6 +28,7 @@ import java.util.Collection;
 import se.kth.id2203.bootstrapping.NodeAssignment;
 import se.kth.id2203.networking.NetAddress;
 
+
 @SerialVersionUID(6322485231428233902L)
 class LookupTable extends NodeAssignment with Serializable {
 
@@ -57,9 +58,18 @@ class LookupTable extends NodeAssignment with Serializable {
 }
 
 object LookupTable {
-  def generate(nodes: Set[NetAddress]): LookupTable = {
+  def generate(nodes: Set[NetAddress], replicationDegree: Int): LookupTable = {
     val lut = new LookupTable();
-    lut.partitions ++= (0 -> nodes);
+    val maxHash = Int.MaxValue;
+    val partitionSize = maxHash / nodes.size;
+    // Divide the hash space into n partitions (given n spots)
+    // Partition i contains node i, as well as the next replicationDegree-1 nodes
+    val nodeList = nodes.toList
+    for (i <- 0 until nodes.size) {
+      val replicationGroup =
+        for (j <- 0 until replicationDegree) yield nodeList((i + j) % nodeList.size);
+      lut.partitions ++= (partitionSize * i -> replicationGroup)
+    }
     lut
   }
 }

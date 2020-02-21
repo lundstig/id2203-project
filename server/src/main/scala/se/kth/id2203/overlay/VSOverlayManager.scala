@@ -49,15 +49,15 @@ class VSOverlayManager extends ComponentDefinition {
   val timer = requires[Timer];
   //******* Fields ******
   val self = cfg.getValue[NetAddress]("id2203.project.address");
-  val repDegree = cfg.getValue[Int]("id2203.project.replicationDegree");
+  val replicationDegree = cfg.getValue[Int]("id2203.project.replicationDegree");
 
   private var lut: Option[LookupTable] = None;
   //******* Handlers ******
   boot uponEvent {
     case GetInitialAssignments(nodes) => {
       log.info("Generating LookupTable...");
-      val lut = LookupTable.generate(nodes);
-      logger.debug("Generated assignments:\n$lut");
+      val lut = LookupTable.generate(nodes, replicationDegree);
+      log.info(s"Generated assignments:\n$lut");
       trigger(new InitialAssignments(lut) -> boot);
     }
     case Booted(assignment: LookupTable) => {
