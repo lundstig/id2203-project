@@ -35,9 +35,17 @@ trait Operation extends KompicsEvent {
 
 @SerialVersionUID(-374812437823538710L)
 case class Op(key: String, id: UUID = UUID.randomUUID()) extends Operation with Serializable 
+
+@SerialVersionUID(-374812437823538711L)
 case class Get(key: String, id: UUID = UUID.randomUUID()) extends Operation with Serializable;
+
+@SerialVersionUID(-374812437823538712L)
 case class Put(key: String, value: String, id: UUID = UUID.randomUUID()) extends Operation with Serializable;
+
+@SerialVersionUID(-374812437823538713L)
 case class Cas(key: String, compare: String, value: String, id: UUID = UUID.randomUUID()) extends Operation with Serializable;
+
+@SerialVersionUID(-374812437823538714L)
 case class Log(key: String, value: List[Operation], id: UUID = UUID.randomUUID()) extends Operation with Serializable;
 
 object OpCode {
@@ -53,4 +61,16 @@ trait OperationResponse extends KompicsEvent {
 }
 
 @SerialVersionUID(155271583133228661L)
-case class OpResponse(id: UUID, status: OpCode.OpCode, value: Option[String]) extends OperationResponse with Serializable;
+case class OpResponse(id: UUID, status: OpCode.OpCode) extends OperationResponse with Serializable;
+
+@SerialVersionUID(155271583133228662L)
+case class GetResponse(id: UUID, status: OpCode.OpCode, value: String) extends OperationResponse with Serializable;
+
+@SerialVersionUID(155271583133228663L)
+case class PutResponse(id: UUID, status: OpCode.OpCode) extends OperationResponse with Serializable;
+
+@SerialVersionUID(155271583133228664L)
+case class CasResponse(id: UUID, status: OpCode.OpCode, value: String) extends OperationResponse with Serializable;
+
+@SerialVersionUID(155271583133228664L)
+case class LogResponse(id: UUID, status: OpCode.OpCode) extends OperationResponse with Serializable;

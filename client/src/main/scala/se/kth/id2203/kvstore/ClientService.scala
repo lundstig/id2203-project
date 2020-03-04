@@ -35,7 +35,7 @@ import collection.mutable;
 import concurrent.{Future, Promise};
 
 case class ConnectTimeout(spt: ScheduleTimeout) extends Timeout(spt);
-case class OpWithPromise(op: Operation, promise: Promise[OpResponse] = Promise()) extends KompicsEvent;
+case class OpWithPromise(op: Operation, promise: Promise[OperationResponse] = Promise()) extends KompicsEvent;
 
 class ClientService extends ComponentDefinition {
 
@@ -47,7 +47,7 @@ class ClientService extends ComponentDefinition {
   val server = cfg.getValue[NetAddress]("id2203.project.bootstrap-address");
   private var connected: Option[ConnectAck] = None;
   private var timeoutId: Option[UUID] = None;
-  private val pending = mutable.SortedMap.empty[UUID, Promise[OpResponse]];
+  private val pending = mutable.SortedMap.empty[UUID, Promise[OperationResponse]];
 
   //******* Handlers ******
   ctrl uponEvent {
@@ -104,31 +104,25 @@ class ClientService extends ComponentDefinition {
     }
   }
 
-  def op(key: String): Future[OpResponse] = {
-    val op = Op(key);
+  def sendOperation(op: Operation) : Future[OperationResponse] = {
     val owf = OpWithPromise(op);
     trigger(owf -> onSelf);
     owf.promise.future
   }
 
-  def get(key: String): Future[OpResponse] = {
-    val get = Get(key);
-    val owf = OpWithPromise(get);
-    trigger(owf -> onSelf);
-    owf.promise.future
+  def op(key: String) = {
+    sendOperation(Op(key));
   }
 
-  def put(key: String, value: String): Future[OpResponse] = {
-    val put = Put(key, value);
-    val owf = OpWithPromise(put);
-    trigger(owf -> onSelf);
-    owf.promise.future
+  def get(key: String) = {
+    sendOperation(Get(key));
   }
 
-  def cas(key: String, compare: String, value: String): Future[OpResponse] = {
-    val cas = Cas(key, compare, value);
-    val owf = OpWithPromise(cas);
-    trigger(owf -> onSelf);
-    owf.promise.future
+  def put(key: String, value: String) = {
+    sendOperation(Put(key, value));
+  }
+
+  def cas(key: String, compare: String, value: String) = {
+    sendOperation(Cas(key, compare, value));
   }
 }
