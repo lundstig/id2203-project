@@ -38,6 +38,7 @@ case class Op(key: String, id: UUID = UUID.randomUUID()) extends Operation with 
 case class Get(key: String, id: UUID = UUID.randomUUID()) extends Operation with Serializable;
 case class Put(key: String, value: String, id: UUID = UUID.randomUUID()) extends Operation with Serializable;
 case class Cas(key: String, compare: String, value: String, id: UUID = UUID.randomUUID()) extends Operation with Serializable;
+case class Log(key: String, value: List[Operation], id: UUID = UUID.randomUUID()) extends Operation with Serializable;
 
 object OpCode {
   sealed trait OpCode;

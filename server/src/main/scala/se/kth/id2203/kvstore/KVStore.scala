@@ -25,25 +25,77 @@ package se.kth.id2203.kvstore;
 
 import se.kth.id2203.networking._;
 import se.kth.id2203.overlay.Routing;
+import se.kth.id2203.leader_election._;
+import se.kth.id2203.paxos._;
 import se.sics.kompics.sl._;
 import se.sics.kompics.network.Network;
-import scala.collection.mutable;
+import scala.collection.mutable._;
+import java.util.UUID;
 
 class KVService extends ComponentDefinition {
 
   //******* Ports ******
   val net = requires[Network];
   val route = requires(Routing);
+  val sc = requires[SConsensus];
+
   //******* Fields ******
   val self = cfg.getValue[NetAddress]("id2203.project.address");
-  val keyValue = new mutable.HashMap[String,String];
+  val store: HashMap[String, String] = HashMap(("1" -> "abc"), ("2" -> "def"), ("5" -> "opq"));
+  val leader: Option[NetAddress] = None;
+  val opPending = Map.empty[UUID, NetAddress];
+  val opLog = ListBuffer.empty[Operation]
+
+
   //******* Handlers ******
   net uponEvent {
-    case NetMessage(header, op: Op) => {
-      log.info("Got operation {}! Now implement me please :)", op);
-      //HANDLE METHODS GET/PUT
-      
-      trigger(NetMessage(self, header.src, op.response(OpCode.NotImplemented)) -> net);
+    case NetMessage(header, op: Operation) => {
+      log.info("Got operation {}!", op);
+      opPending += (op.id -> header.src);
+      trigger(SC_Propose(op) -> sc);
+    }
+  }
+
+  sc uponEvent {
+    case SC_Decide(op: Operation) => {
+      log.info(s"Decide: $op");
+      val src = opPending.getOrElse(op.id, self);
+      op match {
+        case Get(_, _) => {
+          log.info("Sequence Consensus: GET from KVStore");
+          val value = store.get(op.key);
+          if (value.isDefined) {
+            trigger(NetMessage(self, src, op.response(OpCode.Ok, value) -> net);
+          }
+          else {
+            trigger(NetMessage(self, src, op.response(OpCode.NotFound, None)) -> net);
+          }
+        }
+
+        case Put(key, value, _) => {
+          log.info("Sequence Consensus: PUT to KVStore");
+          store += (key -> value);
+          trigger(NetMessage(self, src, op.response(OpCode.Ok, Some(value))) -> net);
+        }
+
+        case Cas(key, compare, value, _) => {
+          log.info("Sequence Consensus: CAS to KVStore");
+          val currentValue = store.get(key);
+          if (!store.contains(key)){
+            log.info(s"KEY $key: Does not exists in store!");
+            trigger(NetMessage(self, src, op.response(OpCode.NotFound, None ))-> net)
+          }else{
+            if(currentValue != compare) {
+              log.info(s"COMPARE $compare: Does not match the current value $currentValue");
+              trigger(NetMessage(self, src, op.response(OpCode.NotFound, None)) -> net);
+            }else {
+              store += (key -> value);
+              log.info("CAS Completed");
+              trigger(NetMessage(self, src, op.response(OpCode.Ok, Some(value)))-> net)
+            }
+          }
+        }
+      }
     }
   }
 }
