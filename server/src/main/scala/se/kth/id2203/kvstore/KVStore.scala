@@ -65,7 +65,7 @@ class KVService extends ComponentDefinition {
           log.info("Sequence Consensus: GET from KVStore");
           val value = store.get(op.key);
           if (value.isDefined) {
-            trigger(NetMessage(self, src, op.response(OpCode.Ok, value) -> net);
+            trigger(NetMessage(self, src, op.response(OpCode.Ok, value)) -> net);
           }
           else {
             trigger(NetMessage(self, src, op.response(OpCode.NotFound, None)) -> net);
