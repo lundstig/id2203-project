@@ -40,6 +40,8 @@ class ParentComponent extends ComponentDefinition {
   //******* Children ******
   val overlay = create(classOf[VSOverlayManager], Init.NONE);
   val kv = create(classOf[KVService], Init.NONE);
+  val sc = create(classOf[Paxos], Init.NONE);
+  val ble = create(classOf[GossipLeaderElection], Init.NONE);
   val boot = cfg.readValue[NetAddress]("id2203.project.bootstrap-address") match {
     case Some(_) => create(classOf[BootstrapClient], Init.NONE); // start in client mode
     case None    => create(classOf[BootstrapServer], Init.NONE); // start in server mode
@@ -54,5 +56,15 @@ class ParentComponent extends ComponentDefinition {
     // KV
     connect(Routing)(overlay -> kv);
     connect[Network](net -> kv);
+    connect[SequenceConsensus] (sc -> kv);
+
+    //BallotLeaderElection
+    connect[Timer](timer -> ble);
+    connect[Network](net -> ble);
+
+    //SequenceConsensus
+    connect[BallotLeaderElection](ble -> sc);
+    connect[Network](net -> sc);
+
   }
 }
