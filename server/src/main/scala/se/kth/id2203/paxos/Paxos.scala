@@ -225,12 +225,17 @@ class Paxos extends ComponentDefinition {
                     trigger(NetMessage(self, p, Accept(nL, c)) -> net)
                 }
             } else {
-                log.debug(s"$self: NOT LEADER -> Forwarding: $c To: $leader");
-                trigger(NetMessage(self, leader.get, c) -> net);
+                if (leader.isDefined) {
+                    log.info(s"$self: NOT LEADER -> Forwarding: $c To: $leader");
+                    trigger(NetMessage(self, leader.get, c) -> net);
+                } else {
+                    log.info(s"$self: There is no leader, can't accept Propose");
+                }
             }
         }
 
         case SetTopology(topology) => {
+            log.info(s"$self SetTopology"); 
             pi = topology;
             others = pi - self;
             majority = (pi.size / 2) + 1;

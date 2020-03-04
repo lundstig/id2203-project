@@ -25,8 +25,9 @@ package se.kth.id2203.overlay;
 
 import se.kth.id2203.bootstrapping._;
 import se.kth.id2203.networking._;
-import se.sics.kompics.sl._;
+import se.kth.id2203.paxos._;
 import se.sics.kompics.network.Network;
+import se.sics.kompics.sl._;
 import se.sics.kompics.timer.Timer;
 import util.Random;
 
@@ -47,6 +48,7 @@ class VSOverlayManager extends ComponentDefinition {
   val boot = requires(Bootstrapping);
   val net = requires[Network];
   val timer = requires[Timer];
+  val sc = requires[SConsensus];
   //******* Fields ******
   val self = cfg.getValue[NetAddress]("id2203.project.address");
   val replicationDegree = cfg.getValue[Int]("id2203.project.replicationDegree");
@@ -59,6 +61,7 @@ class VSOverlayManager extends ComponentDefinition {
       val lut = LookupTable.generate(nodes, replicationDegree);
       log.info(s"Generated assignments:\n$lut");
       trigger(new InitialAssignments(lut) -> boot);
+      trigger(new SetTopology(nodes) -> sc);
     }
     case Booted(assignment: LookupTable) => {
       log.info("Got NodeAssignment, overlay ready.");

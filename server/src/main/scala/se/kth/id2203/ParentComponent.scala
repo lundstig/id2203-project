@@ -24,12 +24,15 @@
 package se.kth.id2203;
 
 import se.kth.id2203.bootstrapping._
+import se.kth.id2203.leader_election._;
 import se.kth.id2203.kvstore.KVService;
+import se.kth.id2203.paxos.Paxos;
+import se.kth.id2203.paxos.SConsensus;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay._
-import se.sics.kompics.sl._
 import se.sics.kompics.Init;
 import se.sics.kompics.network.Network;
+import se.sics.kompics.sl._
 import se.sics.kompics.timer.Timer;
 
 class ParentComponent extends ComponentDefinition {
@@ -56,15 +59,16 @@ class ParentComponent extends ComponentDefinition {
     // KV
     connect(Routing)(overlay -> kv);
     connect[Network](net -> kv);
-    connect[SequenceConsensus] (sc -> kv);
+    connect[SConsensus] (sc -> kv);
 
     //BallotLeaderElection
     connect[Timer](timer -> ble);
     connect[Network](net -> ble);
 
     //SequenceConsensus
-    connect[BallotLeaderElection](ble -> sc);
+    connect[BLElection](ble -> sc);
     connect[Network](net -> sc);
+    connect[SConsensus](sc -> overlay);
 
   }
 }
