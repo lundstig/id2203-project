@@ -65,33 +65,33 @@ class KVService extends ComponentDefinition {
           log.info("Sequence Consensus: GET from KVStore");
           val value = store.get(op.key);
           if (value.isDefined) {
-            trigger(NetMessage(self, src, op.response(OpCode.Ok, value)) -> net);
+            trigger(NetMessage(self, src, GetResponse(op.id, OpCode.Ok, value.get)) -> net);
           }
           else {
-            trigger(NetMessage(self, src, op.response(OpCode.NotFound, None)) -> net);
+            trigger(NetMessage(self, src, GetResponse(op.id, OpCode.NotFound, "")) -> net);
           }
         }
 
         case Put(key, value, _) => {
           log.info("Sequence Consensus: PUT to KVStore");
           store += (key -> value);
-          trigger(NetMessage(self, src, op.response(OpCode.Ok, Some(value))) -> net);
+          trigger(NetMessage(self, src, PutResponse(op.id, OpCode.Ok)) -> net);
         }
 
         case Cas(key, compare, value, _) => {
           log.info("Sequence Consensus: CAS to KVStore");
-          val currentValue = store.get(key);
           if (!store.contains(key)){
             log.info(s"KEY $key: Does not exists in store!");
-            trigger(NetMessage(self, src, op.response(OpCode.NotFound, None ))-> net)
+            trigger(NetMessage(self, src, CasResponse(op.id, OpCode.NotFound, ""))-> net)
           }else{
+            val currentValue = store.get(key).get;
             if(currentValue != compare) {
               log.info(s"COMPARE $compare: Does not match the current value $currentValue");
-              trigger(NetMessage(self, src, op.response(OpCode.NotFound, None)) -> net);
+              trigger(NetMessage(self, src, CasResponse(op.id, OpCode.Ok, currentValue)) -> net);
             }else {
               store += (key -> value);
               log.info("CAS Completed");
-              trigger(NetMessage(self, src, op.response(OpCode.Ok, Some(value)))-> net)
+              trigger(NetMessage(self, src, CasResponse(op.id, OpCode.Ok, currentValue)) -> net)
             }
           }
         }

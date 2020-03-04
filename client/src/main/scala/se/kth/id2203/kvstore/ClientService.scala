@@ -75,9 +75,10 @@ class ClientService extends ComponentDefinition {
       val tc = new Thread(c);
       tc.start();
     }
-    case NetMessage(header, or @ OpResponse(id, status, value)) => {
-      log.debug(s"Got OpResponse: $or");
-      pending.remove(id) match {
+    case NetMessage(header, or: OperationResponse) => {
+      log.debug(s"Got OperationResponse: $or");
+      val id = or.id;
+      pending.remove(or.id) match {
         case Some(promise) => promise.success(or);
         case None          => log.warn(s"ID $id was not pending! Ignoring response.");
       }
