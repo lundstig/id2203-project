@@ -61,11 +61,12 @@ class VSOverlayManager extends ComponentDefinition {
       val lut = LookupTable.generate(nodes, replicationDegree);
       log.info(s"Generated assignments:\n$lut");
       trigger(new InitialAssignments(lut) -> boot);
-      trigger(new SetTopology(nodes) -> sc);
     }
     case Booted(assignment: LookupTable) => {
       log.info("Got NodeAssignment, overlay ready.");
       lut = Some(assignment);
+      // Temporary, we somehow need multiple paxoses
+      trigger(new SetTopology(lut.get.getNodes) -> sc);
     }
   }
 

@@ -12,15 +12,20 @@ class BLElection extends Port {
   request[Overview];
 }
 
-case class Overview(nodes: List[NetAddress]) extends KompicsEvent
+@SerialVersionUID(12387584363487561L)
+case class Overview(nodes: List[NetAddress]) extends KompicsEvent with Serializable;
 
-case class BLE_Leader(leader: NetAddress, ballot: Long) extends KompicsEvent;
+@SerialVersionUID(12387584363487562L)
+case class BLE_Leader(leader: NetAddress, ballot: Long) extends KompicsEvent with Serializable;
 
-case class CheckTimeout(timeout: ScheduleTimeout) extends Timeout(timeout);
+@SerialVersionUID(12387584363487563L)
+case class CheckTimeout(timeout: ScheduleTimeout) extends Timeout(timeout) with Serializable;
 
-case class HB_Request(round: Long, highestBallot: Long) extends KompicsEvent;
+@SerialVersionUID(12387584363487564L)
+case class HB_Request(round: Long, highestBallot: Long) extends KompicsEvent with Serializable;
 
-case class HB_Response(round: Long, ballot: Long) extends KompicsEvent;
+@SerialVersionUID(12387584363487564L)
+case class HB_Response(round: Long, ballot: Long) extends KompicsEvent with Serializable;
 
 class GossipLeaderElection extends ComponentDefinition {
 
@@ -37,7 +42,7 @@ class GossipLeaderElection extends ComponentDefinition {
     private val ballots = mutable.Map.empty[NetAddress, Long];
 
     
-    private var round = 0L;
+    private var round = 1L;
     private var ballot = ballotFromNAddress(0, self);
 
     private var leader: Option[(NetAddress, Long)] = None;
@@ -79,17 +84,11 @@ class GossipLeaderElection extends ComponentDefinition {
             leader = None
         } 
         else {
-            if( leader.isDefined ) {
-                if ( top !=  leader.get ) {
-                highestBallot = topBallot
-                leader = Some(top)
-                trigger( BLE_Leader( topProcess, topBallot ) -> ble )
-                }
-            } 
-            else {
-                highestBallot = topBallot
-                leader = Some(top)
-                trigger( BLE_Leader( topProcess, topBallot ) -> ble )
+            if( leader.isEmpty || top != leader.get ) {
+              highestBallot = topBallot
+              leader = Some(top)
+              log.info(s"$self: New leader is $leader");
+              trigger( BLE_Leader( topProcess, topBallot ) -> ble )
             }
         }
     }
@@ -109,7 +108,10 @@ class GossipLeaderElection extends ComponentDefinition {
     timer uponEvent {
         case CheckTimeout(_) => {
             if ( ballots.size + 1 >= majority ) {
-                checkLeader();
+              log.debug(s"More than a majority of ballots, checking leader");
+              checkLeader();
+            } else {
+              log.info(s"$self: CheckTimout(), have ${ballots.size} ballots (need ${majority-ballots.size-1} more)");
             }
 
             ballots.clear
@@ -124,15 +126,17 @@ class GossipLeaderElection extends ComponentDefinition {
     }
 
     net uponEvent {
-        case NetMessage(src, HB_Request(r, hb)) => {
+        case NetMessage(header, HB_Request(r, hb)) => {
+            val src = header.src;
             if ( hb > highestBallot ) {
                 highestBallot = hb
             }
-            trigger(NetMessage(src, HB_Response(r, ballot)) -> net);
+            trigger(NetMessage(self, src, HB_Response(r, ballot)) -> net);
         }
-        case NetMessage(src, HB_Response(r, b)) => {
+        case NetMessage(header, HB_Response(r, b)) => {
+            val src = header.src;
             if (r == round) {
-                ballots += ((src.getSource(), b))
+                ballots += ((src, b))
             } 
             else {
                 period += delta

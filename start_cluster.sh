@@ -28,7 +28,7 @@ for i in `seq 1 $BOOTCLIENTS`;
                  sleep 1
                  echo $PORT
                  PORT=$(($FIRSTPORT+$i))
-                (java -jar server/target/scala-2.13/server.jar -s localhost:$FIRSTPORT -p $PORT &)
+                java -jar server/target/scala-2.13/server.jar -s localhost:$FIRSTPORT -p $PORT &
         done
-} &> /dev/null
+} #&> /dev/null
 wait
