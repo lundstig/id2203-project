@@ -36,7 +36,7 @@ object ClientConsole {
   def lowercase[_: P] = P(CharIn("a-z"))
   def uppercase[_: P] = P(CharIn("A-Z"))
   def digit[_: P] = P(CharIn("0-9"))
-  def simpleStr[_: P] = P(lowercase | uppercase | digit)
+  def simpleStr[_: P] = P((lowercase | uppercase | digit).rep(1))
   val colouredLayout = new ColoredPatternLayout("%d{[HH:mm:ss,SSS]} %-5p {%c{1}} %m%n");
 }
 
