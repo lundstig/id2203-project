@@ -38,7 +38,7 @@ import scala.concurrent.duration._
 
 class OpsTest extends FlatSpec with Matchers {
 
-  private val messages = 4;
+  private val messages = 10;
   private val clusterSize = 3;
 
   "Linearizability" should "be implemented" in {
