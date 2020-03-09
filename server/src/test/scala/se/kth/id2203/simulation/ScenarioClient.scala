@@ -44,26 +44,61 @@ class ScenarioClient extends ComponentDefinition {
   val server = cfg.getValue[NetAddress]("id2203.project.bootstrap-address");
   private val pending = mutable.Map.empty[UUID, String];
   //******* Handlers ******
+  
+  val operations = mutable.Queue.empty[Operation]
+  var opCounter = 0;
+  var oP : Cas = new Cas("","","");
+  var opID = oP.id
   ctrl uponEvent {
     case _: Start => {
-      val messages = SimulationResult[Int]("messages");
+      val messages = SimulationResult[Int]("messages")
       for (i <- 0 to messages) {
-        val op = new Op(s"test$i");
-        val routeMsg = RouteMsg(op.key, op); // don't know which partition is responsible, so ask the bootstrap server to forward it
-        trigger(NetMessage(self, server, routeMsg) -> net);
-        pending += (op.id -> op.key);
-        logger.info("Sending {}", op);
-        SimulationResult += (op.key -> "Sent");
+        val put = new Put(s"test$i",s"$i");
+        val routeMsg = RouteMsg(put.key, put);
+        trigger(NetMessage(self, server, routeMsg) -> net)
+        operations.enqueue(put)
+        pending += (put.id -> put.key)
+        logger.info("Sending {}", put)
+        SimulationResult += (put.key -> "Ok")
+
+        val get = new Get(s"test$i")
+        val routeMsg1 = RouteMsg(get.key, get) // don't know which partition is responsible, so ask the bootstrap server to forward it
+        trigger(NetMessage(self, server, routeMsg1) -> net)
+        operations.enqueue(get)
+        pending += (get.id -> get.key)
+        logger.info("Sending {}", get)
+        SimulationResult += (get.key -> "Ok")
+      }
+      for(i <- 0 to messages/2) {
+        val newValue = i + 1;
+        val cas = new Cas(s"test$i",s"$i",s"$newValue");
+        opID = cas.id
+        val routeMsg = RouteMsg(cas.key, cas)
+        trigger(NetMessage(self, server, routeMsg) -> net)
       }
     }
   }
 
   net uponEvent {
     case NetMessage(header, or @ OpResponse(id, status)) => {
-      logger.debug(s"Got OpResponse: $or");
-      pending.remove(id) match {
-        case Some(key) => SimulationResult += (key -> status.toString());
-        case None      => logger.warn("ID $id was not pending! Ignoring response.");
+      logger.debug(s"Got OpResponse: $or")
+      var correctOp = true
+      if(id.equals(opID)){
+        val tempOps = operations.clone()
+        for(i <- 0 to SimulationResult[Int]("messages")*2){
+          val opr = tempOps.dequeue()
+          while(!opr.id.equals(operations.dequeue().id)){
+            if(operations.isEmpty){
+              correctOp = false
+              log.info("Not Linearizable")
+            }
+            else{
+                log.info("Is Linearizable")
+              }
+          }
+        }
+        opCounter = opCounter + 1
+        SimulationResult += (opCounter.toString + self.toString -> correctOp)
       }
     }
   }

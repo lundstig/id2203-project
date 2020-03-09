@@ -38,37 +38,28 @@ import scala.concurrent.duration._
 
 class OpsTest extends FlatSpec with Matchers {
 
-  private val nMessages = 10;
+  private val messages = 4;
+  private val clusterSize = 3;
 
-  //  "Classloader" should "be something" in {
-  //    val cname = classOf[SimulationResultSingleton].getCanonicalName();
-  //    var cl = classOf[SimulationResultSingleton].getClassLoader;
-  //    var i = 0;
-  //    while (cl != null) {
-  //      val res = try {
-  //        val c = cl.loadClass(cname);
-  //        true
-  //      } catch {
-  //        case t: Throwable => false
-  //      }
-  //      println(s"$i -> ${cl.getClass.getName} has class? $res");
-  //      cl = cl.getParent();
-  //      i -= 1;
-  //    }
-  //  }
+  "Linearizability" should "be implemented" in {
+    val seed = 123L;
 
-  // "Simple Operations" should "not be implemented" in { // well of course eventually they should be implemented^^
-  //   val seed = 123l;
-  //   JSimulationScenario.setSeed(seed);
-  //   val simpleBootScenario = SimpleScenario.scenario(3);
-  //   val res = SimulationResultSingleton.getInstance();
-  //   SimulationResult += ("messages" -> nMessages);
-  //   simpleBootScenario.simulate(classOf[LauncherComp]);
-  //   for (i <- 0 to nMessages) {
-  //     SimulationResult.get[String](s"test$i") should be (Some("NotImplemented"));
-  //     // of course the correct response should be Success not NotImplemented, but like this the test passes
-  //   }
-  // }
+    JSimulationScenario.setSeed(seed);
+    val simpleBootScenario = SimpleScenario.scenario(clusterSize);
+    val res = SimulationResultSingleton.getInstance();
+    SimulationResult += ("message" -> messages);
+    simpleBootScenario.simulate(classOf[LauncherComp]);
+    for (i <- 0 to messages) {
+      //PUT operation
+      SimulationResult.get[String](s"test$i") should be (Some("Ok"))
+      //GET operation
+      SimulationResult.get[String](s"test$i") should be (Some("Ok"))
+    }
+    for(i <- 0 to messages/2){
+      SimulationResult.get[String](s"test$i") should be (Some("Ok"))
+    }
+
+  }
 
 }
 
