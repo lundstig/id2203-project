@@ -53,6 +53,7 @@ object OpCode {
   case object Ok extends OpCode;
   case object NotFound extends OpCode;
   case object NotImplemented extends OpCode;
+  case object InvalidPreconditon extends OpCode;
 }
 
 trait OperationResponse extends KompicsEvent {
@@ -70,7 +71,7 @@ case class GetResponse(id: UUID, status: OpCode.OpCode, value: String) extends O
 case class PutResponse(id: UUID, status: OpCode.OpCode) extends OperationResponse with Serializable;
 
 @SerialVersionUID(155271583133228664L)
-case class CasResponse(id: UUID, status: OpCode.OpCode, value: String) extends OperationResponse with Serializable;
+case class CasResponse(id: UUID, status: OpCode.OpCode, valueRead: String) extends OperationResponse with Serializable;
 
 @SerialVersionUID(155271583133228664L)
 case class LogResponse(id: UUID, status: OpCode.OpCode) extends OperationResponse with Serializable;

@@ -87,7 +87,7 @@ class KVService extends ComponentDefinition {
             val currentValue = store.get(key).get;
             if(currentValue != compare) {
               log.info(s"COMPARE $compare: Does not match the current value $currentValue");
-              trigger(NetMessage(self, src, CasResponse(op.id, OpCode.Ok, currentValue)) -> net);
+              trigger(NetMessage(self, src, CasResponse(op.id, OpCode.InvalidPreconditon, currentValue)) -> net);
             }else {
               store += (key -> value);
               log.info("CAS Completed");

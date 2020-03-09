@@ -177,7 +177,7 @@ class Paxos extends ComponentDefinition {
       if (nProm == nL) {
         // Report everything decided as decided :D
         while (ld < l) {
-          log.info(s"$self: Deciding on $ld")
+          log.info(s"$self: Deciding on ${ld+1}")
           trigger(SC_Decide(va(ld)) -> sc);
           ld += 1;
         }

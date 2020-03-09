@@ -36,7 +36,7 @@ object ClientConsole {
   def lowercase[_: P] = P(CharIn("a-z"))
   def uppercase[_: P] = P(CharIn("A-Z"))
   def digit[_: P] = P(CharIn("0-9"))
-  def simpleStr[_: P] = P(lowercase | uppercase | digit)
+  def simpleStr[_: P] = P((lowercase | uppercase | digit).rep(1))
   val colouredLayout = new ColoredPatternLayout("%d{[HH:mm:ss,SSS]} %-5p {%c{1}} %m%n");
 }
 
@@ -81,8 +81,9 @@ class ClientConsole(val service: ClientService) extends CommandConsole with Pars
 
   val getCommand = parsed(getParser, usage = "get <key>", descr = "Reads the value of <key>") {
     key =>
+    println(key);
     val or: Option[OperationResponse] = getResponse(service.get(key));
-    if (or.isDefined) {
+    if (or.isDefined && or.get.status == OpCode.Ok) {
       val r = or.get.asInstanceOf[GetResponse];
       println(s"Value is ${r.value}"); 
     }
@@ -95,6 +96,12 @@ class ClientConsole(val service: ClientService) extends CommandConsole with Pars
 
   val casCommand = parsed(casParser, usage = "cas <key> <compare> <value>", descr = "Writes <value> to <key> if previous value is <compare>, returns previous value") {
     case (key, compare, value) =>
-    getResponse(service.cas(key, compare, value));
+    val or = getResponse(service.cas(key, compare, value));
+    if (or.isDefined) {
+      val status = or.get.status;
+      if (status == OpCode.Ok || status == OpCode.InvalidPreconditon) {
+        println(s"Value read was ${or.get.asInstanceOf[CasResponse].valueRead}");
+      }
+    }
   }
 }
